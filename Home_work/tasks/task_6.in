@@ -1,0 +1,96 @@
+# DPD Fluid
+
+variable T    equal 2.0
+variable rc   equal 1.0
+variable rcD  equal 1.2
+
+
+units        lj
+boundary     p p p
+atom_style   molecular
+dimension    3
+newton       on
+comm_modify  vel yes
+
+
+### create box and configuration
+variable     L equal 30
+lattice      fcc 3.0
+region       simBox block 0 ${L} 0 ${L} 0 ${L}
+create_box   2 simBox  bond/types 1  extra/bond/per/atom 2 extra/special/per/atom 10
+
+
+bond_style harmonic
+
+bond_coeff 1 100.0 1.0
+
+#create_atoms 1 region simBox
+
+
+
+
+mass         1 0.1
+mass         2 0.1
+
+
+
+
+pair_style  dpd ${T} ${rcD} 3854262 
+pair_coeff   1 1  25.0  10.0  1.
+pair_coeff   1 2  25.0  10.0  1.
+pair_coeff   2 2  25.0  10.0  1.
+
+
+
+molecule polymer task_5_polymer.mol
+create_atoms 0 random 100 87910 NULL mol polymer 454756 overlap 1.5 maxtry 50
+
+
+
+
+timestep     0.005
+run_style    verlet
+
+
+comm_modify vel yes
+comm_modify cutoff 6.0
+
+
+thermo_style custom step time temp press
+thermo       100
+
+
+velocity all create ${T} 68768932
+
+fix rigid_thermo all rigid/small molecule
+
+# Equilibration phase
+run          500000
+
+# Compute MSD after equilibration
+
+
+
+reset_timestep  0
+
+
+
+compute msd_all all msd
+
+
+fix msd_output all ave/time 10 1 100 c_msd_all file msd.dat mode vector
+
+
+
+
+
+dump 2 all custom 10 data.lammpstrj id type x y z vx vy vz
+
+
+# Production run to measure MSD
+run          500000
+
+
+
+
+run 0

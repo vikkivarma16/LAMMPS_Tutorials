@@ -1,0 +1,39 @@
+# Lennard-Jones fluid with DPD thermostat
+
+units        lj
+dimension    3
+boundary     p p p
+atom_style   atomic
+newton       on
+comm_modify  vel yes #important to communicate velocity in dpd simulation
+
+
+# Create simulation box and atoms
+variable     L equal 20.0
+region       simBox block 0 ${L} 0 ${L} 0 ${L}
+create_box   1 simBox
+
+# Define number density and create particles
+variable     rho equal 0.2
+
+create_atoms 1 random 2000 12345 simBox overlap 1.5 maxtry 50
+
+# Define masses and LJ interactions
+mass         1 1.0
+pair_style hybrid/overlay lj/cut 3.2   dpd 4 3.2 3854262
+pair_coeff 1  1  lj/cut  1.0 1.0 2.5
+pair_coeff 1  1   dpd   10.0  4.5  1.5
+
+# Apply DPD thermostat
+velocity     all create 1.0 12345 mom yes rot no
+fix  vikki_ineg  all  nve
+# Neighbor settings
+
+# Thermodynamic output
+thermo_style custom step temp epair etotal press
+thermo       100
+
+# Run simulation
+timestep     0.005
+run          10000
+

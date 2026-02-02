@@ -1,0 +1,21 @@
+# Initialize
+units lj
+dimension 3 
+atom_style molecular
+boundary p p p
+pair_style hybrid lj/cut 2.5 gauss 2.5
+
+# Define the simulation box
+
+region my_box block 0 4.0 0 4.0 0 4.0
+create_box 2 my_box
+
+# Create atoms
+
+create_atoms 1 single 1.0 1.0 1.0       # Central atom (type 1)
+create_atoms 2 single 2 1.0 1.0      # Atom 1 (type 2, offset along +x +y +z)
+create_atoms 2 single 8.0 0.0 2.0       # Atom 2 (type 2, offset along -x +y +z)
+create_atoms 2 single 3.0 2.0 1.0       # Atom 3 (type 2, offset along +x -y +z)
+create_atoms 2 single 3.9 0.0 0.0       # Atom 4 (type 2, offset along +x +y -z)
+
+

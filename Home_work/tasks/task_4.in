@@ -1,0 +1,49 @@
+# Initialize
+units lj
+atom_style molecular
+boundary p p p
+
+# Define the simulation box
+region box block 0 2.5 0 2.5 0 2.5
+create_box 2 box bond/types 1 extra/bond/per/atom 3 extra/special/per/atom 3
+
+# Create a tetrahedral molecule
+create_atoms 1 single 1 1 1  # Atom 1 Central atom (type 1)
+create_atoms 2 single 2 2 2  # Atom 2 (type 2, offset along +x +y +z)
+create_atoms 2 single 0 2 2  # Atom 3 (type 2, offset along -x +y +z)
+create_atoms 2 single 2 0 2  # Atom 4 (type 2, offset along +x -y +z)
+create_atoms 2 single 2 2 0  # Atom 5 (type 2, offset along +x +y -z)
+
+# Define interactions
+pair_style hybrid lj/cut 2.5 gauss 1.0
+pair_coeff 1 1 lj/cut 1.0 1.0 2.5  # Central-central using Lennard-Jones
+pair_coeff 2 2 gauss 1.0 1.0 1.5   # Attached-attached using Gaussian
+pair_coeff 1 2 none                # Central-attached has no pairwise interaction
+
+mass 1 1.0  # Central atom mass
+mass 2 0.01  # Peripheral atoms mass
+
+# Bond style
+bond_style harmonic
+bond_coeff 1 100.0 1.73  # Single bond type for intra-molecular rigidity
+
+# Create bonds to form tetrahedral structure
+create_bonds single/bond 1 1 2  # Central atom bonded to Atom 1
+create_bonds single/bond 1 1 3  # Central atom bonded to Atom 2
+create_bonds single/bond 1 1 4  # Central atom bonded to Atom 3
+#create_bonds single/bond 1 1 5  # Central atom bonded to Atom 3
+
+# Replicate the molecule across the simulation box
+replicate 3 3 3  # Replicate molecules in a 3x3x3 grid
+
+fix inte all nve
+
+fix thermo_stat all langevin 5.0 5.0 0.1 428984
+
+# Output initial configuration
+write_data hybrid_pair_styles.data
+
+
+# Run a short simulation
+thermo 100
+run 100000

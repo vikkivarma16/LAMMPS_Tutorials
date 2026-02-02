@@ -1,0 +1,26 @@
+# Initialize
+units lj
+dimension 3 
+atom_style molecular
+boundary p p p
+pair_style hybrid lj/cut 2.5 gauss 2.5
+
+# Define the simulation box
+
+
+region simulation_box block -20 20 -20 20 -20 20
+create_box 2 simulation_box
+
+region region_cylinder_in cylinder z 0 0 10 INF INF side in
+region region_cylinder_out cylinder z 0 0 10 INF INF side out
+
+create_atoms 1 random 1000 341341 simulation_box
+create_atoms 2 random 150 127569 simulation_box
+
+
+
+# it groups the atoms in a family where different kind of fixes for the movement or any other kind of operation can be applied on different family of atoms
+# e.g, you can apply a random noise (nvt or using fix langevin) to one particles and nve to type 2 particles...
+
+group type_1 type 1
+group type_2 type 2

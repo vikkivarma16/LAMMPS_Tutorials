@@ -1,0 +1,90 @@
+# Some variables 
+
+variable T    equal 1.0
+variable rc   equal 1.0
+variable rcD  equal 1.0
+variable  L   equal 10
+
+
+
+
+# Basic simulation settings
+
+units        lj
+boundary     p p p
+atom_style   atomic
+dimension    3
+newton       on
+comm_modify  vel yes
+
+
+
+
+# Create simulation box
+
+region       simBox block 0 ${L} 0 ${L} 0 ${L}
+create_box   1 simBox
+
+
+
+
+# Create_atoms 1 in region simBox
+
+create_atoms 1 random 3000 12456 simBox
+mass         1 1.0
+
+
+
+
+# Define the pairwise interaction style (DPD)
+
+pair_style       dpd ${T} ${rcD} 3854262
+pair_coeff   1   1  25.0  4.5  1.0
+
+
+
+
+# Defining some simulation parameters and initiating velocity and timesteps
+
+run_style    verlet
+velocity all create ${T} 68768932
+timestep 0.005
+
+
+
+
+# Output thermodynamic quantities which shows on terminal
+
+thermo_style custom step time temp press
+thermo       100
+
+
+
+
+# Apply the NVE ensemble (constant number of particles, volume, and energy)
+
+fix 1 all nve
+
+
+
+
+# Equilibration phase - run to allow the system to stabilize
+
+run          200000
+
+
+
+
+# Compute MSD (Mean Squared Displacement) after equilibration
+
+reset_timestep  0
+compute msd_all all msd
+fix msd_output all ave/time 100 1 100 c_msd_all file msd.dat mode vector
+
+
+
+
+# Production run to measure MSD over time
+
+run          200000
+
