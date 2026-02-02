@@ -1,8 +1,8 @@
 
 ````markdown
-# Periodic Object Creator
+# LAMMPS_Tutorials
 
-A Python package to create, manipulate, and visualize 3D and 2D objects with periodic properties.  
+A collection of examples for the LAMMPS user at the beginner and advance level.  
 
 **Author:** Vikki Anand Varma  
 **Email:** vikkivarma16@gmail.com  
