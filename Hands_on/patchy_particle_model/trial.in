@@ -1,0 +1,14 @@
+# Defining essential variables
+
+units lj
+atom_style  hybrid sphere molecular
+boundary p p p
+pair_style hybrid lj/cut 2.0 cosine/squared 0.12
+
+
+
+
+# Creating simulation box
+
+region box block 0 30.0 0 30.0 0 30.0
+create_box 2 box

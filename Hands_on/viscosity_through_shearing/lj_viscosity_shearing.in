@@ -1,0 +1,104 @@
+# ----------------------------------------------
+# Viscosity through shearing (NEMD)
+# ----------------------------------------------
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+# -------------- USER PARAMETERS ----------------
+variable T      equal 1.0        # target temperature
+variable Tinit  equal 1.2        # equilibration temperature
+variable dt     equal 0.0001     # timestep
+
+# Sampling parameters
+variable p      equal 400        # correlation length (samples)
+variable s      equal 5          # sampling interval (steps)
+variable d      equal ${p}*${s}  # thermo output interval
+variable srate  equal 2          # shear rate applied via upper wall
+
+# In LJ units: kB = 1
+variable kB     equal 1.0
+
+# ---------------- SYSTEM SETUP -----------------
+# Simulation box
+region          box block -3 23 0 20 0 20
+create_box      3 box
+
+# Wall regions
+region  lowersec block INF 0 INF INF INF INF
+region  uppersec block 20 INF INF INF INF INF
+
+# Create atoms
+lattice         fcc 0.3
+create_atoms    1 box
+mass            * 1.0
+
+# Define groups
+group upper  region uppersec
+group lower  region lowersec
+group wall   union upper lower
+group fluid  subtract all wall
+
+# Assign atom types to walls
+set group upper type 2 
+set group lower type 3
+
+# ---------------- INTERACTIONS -----------------
+pair_style      lj/cut 3.0
+pair_coeff      * * 1.0 1.0 3.5
+pair_modify     shift yes
+
+# Time integration
+timestep        ${dt}
+thermo          ${d}
+
+# ---------------- INITIAL VELOCITIES -----------------
+# Thermalize fluid
+velocity fluid create ${T} 12345 mom yes rot yes dist gaussian
+
+# Impose shear by moving upper wall
+velocity upper set 0.0 ${srate} 0.0 sum no  
+
+# Temperature bias for shear flow
+compute bias fluid temp/partial 1 0 1 
+
+# Freeze wall atoms
+fix frozenwall wall setforce 0.0 0.0 0.0
+
+# ------------------ EQUILIBRATION ------------------
+# Langevin thermostat on fluid only
+fix  thermostat  fluid langevin 1.1 1.1 0.1 933888
+fix  integrator  all   nve
+
+# Remove streaming velocity from thermostat
+fix_modify thermostat temp bias
+
+thermo 100
+
+# Shear-corrected temperature diagnostic
+compute fluid_temp fluid temp/ramp vy 0 ${srate} x 1 19
+
+thermo_style custom step temp press c_bias c_fluid_temp
+
+# Trajectory output
+dump 1 all custom 5000 simulation_data.lammpstrj id type x y z
+
+# Equilibration run
+run 1000000
+
+# ---------------- PRODUCTION ----------------
+# Shear stress variable
+variable pxy equal pxy
+
+# Velocity profile along x
+compute chunk_1 fluid chunk/atom bin/1d x lower 0.05 units reduced
+compute chunkvel fluid vcm/chunk chunk_1
+fix 1 all ave/time 100 10 1000 c_chunkvel[*] file velocity_profile.txt mode vector
+
+# Time-averaged shear stress
+fix pxy_ave all ave/time 100 10 1000 v_pxy file pxy.dat
+
+# Production run
+run 100000

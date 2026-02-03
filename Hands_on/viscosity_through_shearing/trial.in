@@ -1,0 +1,22 @@
+# ----------------------------------------------
+# Viscosity through the shearing
+# ----------------------------------------------
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+# -------------- USER PARAMETERS ----------------
+variable T      equal 1.0        # target temperature
+variable Tinit  equal 1.2        # equilibration temperature
+variable dt     equal 0.0001
+
+# Correlation sampling parameters
+variable p      equal 400        # correlation length (samples)
+variable s      equal 5          # sampling interval (steps)
+variable d      equal ${p}*${s}  # dump interval
+variable srate  equal 2   # shearing rate for the fluid in the upper box region to create the velocity profile
+
+# In LJ units: kB = 1
+variable kB     equal 1.0

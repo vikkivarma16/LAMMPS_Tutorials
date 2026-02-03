@@ -18,7 +18,7 @@ create_box 2 box
 
 # Loading and creating molecule from the given template
 
-molecule patchy_part e2_patchy_molecule.mol
+molecule patchy_part patchy_molecule.mol
 create_atoms 0 random 1000 87910 NULL mol patchy_part 454756 overlap 1.5 maxtry 50
 
 
