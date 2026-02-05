@@ -64,8 +64,8 @@ ax.scatter(water_x_zoom, water_y_zoom,
 scale_square = Rectangle(
     (0, 0), 10, 10,
     fill=False,
-    edgecolor='black',
-    linewidth=2,
+    edgecolor='orange',
+    linewidth=3,
     zorder=10
 )
 ax.add_patch(scale_square)
@@ -75,7 +75,6 @@ ax.set_title("Colloids in water (zoomed out, same density)")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_aspect('equal')
-ax.legend()
 plt.tight_layout()
 plt.savefig("colloids_in_water_zoomed.png", dpi=600)
 plt.close()

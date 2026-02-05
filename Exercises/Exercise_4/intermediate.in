@@ -1,0 +1,58 @@
+# Defining the essential variables  and switching off the periodic boundary condition along z
+
+units lj 
+dimension 3
+atom_style atomic
+boundary p p s 
+pair_style lj/cut 2.5
+
+
+
+
+# Loading the system state
+
+read_data compressed_coordinate.data
+
+
+
+
+# Defining the pair style
+
+pair_style lj/cut 2.6
+pair_coeff 1  1  1.0 1.0 2.5
+
+
+
+
+# Assigning the initial velocity
+
+velocity all create 1.0 12345 mom yes rot no  # Assign initial velocities
+
+
+
+
+# Setting up thermostat and integrator
+
+fix my_thermo all langevin 1 1 0.1 54664
+fix my_integrator all nve
+
+
+
+
+# Setting up time step 
+
+timestep 0.005
+
+
+
+
+# Running the simulation to switch off the periodicity along the z
+
+run 20
+
+
+
+
+# Exporting the system stat with z having no periodic boundary condition
+
+write_data compressed_coordinate.data

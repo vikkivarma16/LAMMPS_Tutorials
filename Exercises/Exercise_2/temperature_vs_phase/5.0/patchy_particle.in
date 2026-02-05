@@ -1,0 +1,102 @@
+# Defining essential variables
+
+units lj
+atom_style  hybrid sphere molecular
+boundary p p p
+pair_style hybrid lj/cut 2.0 cosine/squared 0.12
+
+
+
+
+# Creating simulation box
+
+region box block 0 30.0 0 30.0 0 30.0
+create_box 2 box
+
+
+
+
+# Loading and creating molecule from the given template
+
+molecule patchy_part patchy_molecule.mol
+create_atoms 0 random 1000 87910 NULL mol patchy_part 454756 overlap 1.5 maxtry 50
+
+
+
+pair_modify shift yes
+# Defining particle properties and interaction parameters among the particles 
+
+pair_coeff 1 1 lj/cut 1.0 1.0 1.1224
+pair_coeff 1 2 none 
+pair_coeff 2 2 cosine/squared 8 0.3 0.35        # Gaussian potential for peripheral atoms
+
+set type 1 mass 1.0
+set type 2 mass 0.000001
+
+set type 1 diameter 1.0
+set type 2 diameter 0.0
+
+
+
+
+# Grouping the particles in different set to apply different fixes
+
+group core type 1
+group patch type 2
+group rigid_molecule type 1 2 
+
+
+
+
+# Speeding up simulation by excluding the unnecessary calculation of particles within the molecule
+
+neigh_modify exclude molecule/intra rigid_molecule every 1 delay 0 check no
+
+
+
+
+# Setting up thermostat on the brownian particles while the patches are being treated just an interaction cites
+
+fix thermo_stat  core langevin 5 5 0.1 428984  omega yes
+
+
+
+
+# Exporting the simulation data
+
+dump 1 all custom 10000 simulation_data.lammpstrj id type x y z mol
+fix rigid_thermo rigid_molecule rigid/small molecule 
+
+
+
+
+# Computing temperature and kinetic energy just on the central core particles
+
+compute kinetic_core core ke
+fix kinetic_output core ave/time 100 1 100 c_kinetic_core file kinetic.dat mode scalar
+
+compute temp_core core temp/sphere
+fix temp_output core ave/time 100 1 100 c_temp_core file temperature.dat mode scalar
+
+
+
+
+# Defining the time step achieved in lj unit with each simulation step
+
+timestep 0.005                               # Set timestep
+
+
+
+
+# Specifying the parameters to be printed on the terminal 
+
+thermo 100
+thermo_style custom step temp ke pe press c_kinetic_core c_temp_core
+
+
+
+
+# Running the simulation
+
+run 1000000
+
