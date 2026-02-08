@@ -26,7 +26,7 @@ create_atoms 1 random 5000 87910 my_box
 
 # Defining the particle's properties and switching off the interaction
 
-mass 3 1.0
+mass 1 1.0
 
 pair_style lj/cut 2.5
 pair_style none
@@ -36,14 +36,14 @@ pair_style none
 
 # Creating initial velocity distribution for a given temperature
 
-velocity all create 7.0 12345 mom yes rot no  # Assign initial velocities
+velocity all create 4.0 12345 mom yes rot no  # Assign initial velocities
 
 
 
 
 # Setting up Brownian dynamics through the Langevin thermostat at a particular temperature
 
-fix my_thermo_stat all langevin 1  1  0.3 89080
+fix my_thermo_stat all langevin 4  4  0.1 89080
 
 
 
