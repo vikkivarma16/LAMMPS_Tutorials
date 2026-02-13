@@ -1,0 +1,4 @@
+import "spce_simple.lt"
+wat = new SPCE [10].move(0.0, 0.0, 3.1034)
+[10].move(0.0, 3.1034, 0.0)
+[10].move(3.1034, 0.0, 0.0)

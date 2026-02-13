@@ -1,0 +1,239 @@
+LAMMPS (10 Sep 2025 - Development - patch_10Sep2025-660-g792d014343)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread.
+  using 1 OpenMP thread(s) per MPI task
+units metal
+atom_style atomic
+boundary f f f
+newton on
+
+
+
+read_data input_cnt_without_topology.txt
+Reading data file ...
+  orthogonal box = (-60 -40 -40) to (60 40 40)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  286 atoms
+  read_data CPU = 0.002 seconds
+pair_style airebo 3.0
+include cnt_utilities.txt
+pair_coeff * * CH.airebo C
+Reading airebo potential file CH.airebo with DATE: 2011-10-25
+
+
+
+
+
+group carbon_atoms type 1
+286 atoms in group carbon_atoms
+variable zmax equal 10
+variable zmin equal -10
+region rtop block  INF INF INF INF ${zmax} INF
+region rtop block  INF INF INF INF 10 INF
+region rbot block  INF INF INF INF INF ${zmin}
+region rbot block  INF INF INF INF INF -10
+region rmid block  INF INF INF INF ${zmin} ${zmax}
+region rmid block  INF INF INF INF -10 ${zmax}
+region rmid block  INF INF INF INF -10 10
+
+
+group cnt_top region rtop
+23 atoms in group cnt_top
+group cnt_bot region rbot
+23 atoms in group cnt_bot
+group cnt_mid region rmid
+240 atoms in group cnt_mid
+
+
+variable zmax_del equal ${zmax}-2
+variable zmax_del equal 10-2
+variable zmin_del equal ${zmin}+2
+variable zmin_del equal -10+2
+region rdel block INF INF INF INF ${zmin_del} ${zmax_del}
+region rdel block INF INF INF INF -8 ${zmax_del}
+region rdel block INF INF INF INF -8 8
+group rdel region rdel
+192 atoms in group rdel
+delete_atoms random fraction 0.02 no rdel NULL 2793
+Deleted 1 atoms, new total = 285
+
+
+reset_atoms id sort yes
+Resetting atom IDs ...
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 12.2
+  ghost atom cutoff = 12.2
+  binsize = 6.1, bins = 20 14 14
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair airebo, perpetual
+      attributes: full, newton on, ghost
+      pair build: full/bin/ghost
+      stencil: full/ghost/bin/3d
+      bin: standard
+velocity cnt_mid create 300 48455 mom yes rot yes
+
+fix mynve1 cnt_top nve
+fix mynve2 cnt_bot nve
+fix mynvt cnt_mid nvt temp 300 300 0.1
+
+
+
+fix mysf1 cnt_top setforce 0 0 0
+fix mysf2 cnt_bot setforce 0 0 0
+velocity cnt_top set 0 0 0
+velocity cnt_bot set 0 0 0
+
+
+variable Lcnt equal xcm(cnt_top,z)-xcm(cnt_bot,z)
+variable Fcnt equal f_mysf1[1]-f_mysf2[1]
+
+
+dump viz all image 1000 myimage.*.ppm type type size 1000 400 zoom 4 shiny 0.3 adiam 1.5 box no 0.01 view 90 0 shiny 0.1 fsaa yes
+dump_modify viz pad 5 backcolor white acolor 1 gray
+
+
+
+
+
+compute Tmid cnt_mid temp
+thermo 1000
+thermo_style custom step temp etotal v_Lcnt v_Fcnt
+thermo_modify temp Tmid line yaml
+WARNING: Temperature for thermo pressure is not for group all (src/thermo.cpp:570)
+
+timestep 0.0001
+run 5000
+Per MPI rank memory allocation (min/avg/max) = 3.888 | 3.888 | 3.888 Mbytes
+---
+keywords: ['Step', 'Temp', 'TotEng', 'v_Lcnt', 'v_Fcnt', ]
+data:
+  - [0, 300, -2014.67980353443, 23.4033554347826, 0.000467611754781799, ]
+  - [1000, 208.657282768403, -2013.47812703881, 23.4033554347826, 0.726972223564346, ]
+  - [2000, 230.274914956389, -2011.62768898796, 23.4033554347826, 1.62325935314985, ]
+  - [3000, 269.902806944071, -2009.53503773666, 23.4033554347826, 1.58379402781186, ]
+  - [4000, 273.668167226772, -2007.57903536904, 23.4033554347826, -1.19222196040865, ]
+  - [5000, 318.388603152399, -2006.139512884, 23.4033554347826, 0.626015354139525, ]
+...
+Loop time of 10.6279 on 1 procs for 5000 steps with 285 atoms
+
+Performance: 4.065 ns/day, 5.904 hours/ns, 470.460 timesteps/s, 134.081 katom-step/s
+100.0% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 10.498     | 10.498     | 10.498     |   0.0 | 98.78
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00074201 | 0.00074201 | 0.00074201 |   0.0 |  0.01
+Output  | 0.085949   | 0.085949   | 0.085949   |   0.0 |  0.81
+Modify  | 0.0381     | 0.0381     | 0.0381     |   0.0 |  0.36
+Other   |            | 0.004945   |            |       |  0.05
+
+Nlocal:            285 ave         285 max         285 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:        51524 ave       51524 max       51524 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 51524
+Ave neighs/atom = 180.78596
+Neighbor list builds = 0
+Dangerous builds = 0
+
+
+velocity cnt_top set  0 0 1.5
+velocity cnt_bot set  0 0 -1.5
+
+run 50000
+Per MPI rank memory allocation (min/avg/max) = 4.141 | 4.141 | 4.141 Mbytes
+---
+keywords: ['Step', 'Temp', 'TotEng', 'v_Lcnt', 'v_Fcnt', ]
+data:
+  - [5000, 318.3886031524, -2006.139512884, 23.4033554347826, 0.626015354139525, ]
+  - [6000, 331.541798959925, -2001.48164778799, 23.7033554347819, 0.736098937017683, ]
+  - [7000, 289.630680149654, -1996.09712216187, 24.0033554347812, -0.719696167122583, ]
+  - [8000, 279.981499954038, -1988.82617165474, 24.3033554347805, -0.390205392151828, ]
+  - [9000, 268.622673058539, -1978.78743802684, 24.6033554347798, -1.84157177618403, ]
+  - [10000, 278.45145878326, -1966.21385502147, 24.9033554347791, -1.72414305752343, ]
+  - [11000, 319.49237815498, -1952.12935200314, 25.2033554347784, 1.89312888593484, ]
+  - [12000, 291.352336402624, -1937.52003981174, 25.5033554347777, 0.497209700502698, ]
+  - [13000, 305.695862839715, -1922.4335890399, 25.803355434777, -2.31086458367259, ]
+  - [14000, 299.244633130327, -1906.88280012188, 26.1033554347763, 1.503420173321, ]
+  - [15000, 280.399417402502, -1891.18818655471, 26.4033554347756, 2.49253362021433, ]
+  - [16000, 298.950313035382, -1873.77249335085, 26.7033554347749, 1.28068322776738, ]
+  - [17000, 309.806706088122, -1855.14925229618, 27.0033554347742, 0.931122913155733, ]
+  - [18000, 324.677659949958, -1835.92594765507, 27.3033554347735, 0.310991809341109, ]
+  - [19000, 290.149294661298, -1816.83177013872, 27.6033554347728, 1.35421980000125, ]
+  - [20000, 308.475586840873, -1795.69190188805, 27.9033554347721, 2.09475278706586, ]
+  - [21000, 320.90571341784, -1773.18945965413, 28.2033554347714, 1.31395178086083, ]
+  - [22000, 305.534803007895, -1749.4949947608, 28.5033554347707, -1.03855005093216, ]
+  - [23000, 429.043463757782, -1727.41940952657, 28.80335543477, -0.737803944753037, ]
+  - [24000, 423.470029529679, -1709.87599134153, 29.1033554347693, -2.37032154144655, ]
+  - [25000, 369.388886875329, -1692.96686349029, 29.4033554347686, 1.11760925093322, ]
+  - [26000, 365.610669838783, -1673.95583728967, 29.7033554347679, -0.798232047760357, ]
+  - [27000, 339.937668630967, -1655.29639903441, 30.0033554347672, -4.62984804206037, ]
+  - [28000, 345.910492405943, -1634.67644756751, 30.3033554347665, -1.34442329253949, ]
+  - [29000, 373.512005597357, -1614.39567132698, 30.6033554347658, -2.58833766887599, ]
+  - [30000, 323.035189540114, -1596.48066505553, 30.9033554347651, -3.19972828043743, ]
+  - [31000, 312.578904091925, -1576.62799478438, 31.2033554347644, 2.73947465465923, ]
+  - [32000, 345.723286819243, -1556.653163709, 31.5033554347651, -0.58656085180633, ]
+  - [33000, 545.218093997191, -1537.15777625903, 31.8033554347661, 1.78615393528085, ]
+  - [34000, 1022.66614012996, -1532.77849953839, 32.1033554347671, 0.390722542607451, ]
+  - [35000, 1980.57693224476, -1577.73159144589, 32.4033554347681, 0.762619357694334, ]
+  - [36000, 1970.82529186803, -1655.23209778254, 32.7033554347693, 1.74643334388718, ]
+  - [37000, 1509.07718693769, -1745.29494409279, 33.0033554347721, 3.37379951444811, ]
+  - [38000, 1146.10519314814, -1807.04391651042, 33.303355434775, 1.16362610507245, ]
+  - [39000, 736.717259453641, -1845.04132977976, 33.6033554347778, 7.06268059626634, ]
+  - [40000, 500.724234580292, -1866.9295754329, 33.9033554347807, -4.42020302021788, ]
+  - [41000, 315.577240968097, -1872.5445061926, 34.2033554347835, -0.553466839806119, ]
+  - [42000, 227.340675543881, -1870.33316895303, 34.5033554347864, -1.74233173548107, ]
+  - [43000, 377.690648468011, -1863.26308411447, 34.8033554347893, -1.58680008940805, ]
+  - [44000, 353.217004656587, -1860.14618161924, 35.1033554347921, 4.49347323112592, ]
+  - [45000, 298.550945762294, -1856.93660890627, 35.403355434795, -0.670812836300934, ]
+  - [46000, 228.57522008808, -1851.7914599876, 35.7033554347978, -3.38876553027704, ]
+  - [47000, 296.709861381073, -1841.63494601104, 36.0033554348007, 0.435657800414912, ]
+  - [48000, 538.407799763361, -1834.3984100771, 36.3033554348035, -2.67405375747946, ]
+  - [49000, 358.611689591279, -1838.57365712169, 36.6033554348064, -3.26603325128949, ]
+  - [50000, 273.621211267415, -1835.74772383571, 36.9033554348092, -4.32787271670868, ]
+  - [51000, 283.173854652693, -1830.07740454651, 37.2033554348121, 2.05203824131121, ]
+  - [52000, 246.33988529738, -1822.95922746028, 37.5033554348149, 0.836529755133776, ]
+  - [53000, 759.748335178933, -1822.32209466775, 37.8033554348178, -6.1656456216006, ]
+  - [54000, 622.407038250709, -1840.56501845423, 38.1033554348206, 2.87793549623729, ]
+  - [55000, 352.696878843947, -1851.18572779945, 38.4033554348235, -3.09201820228206, ]
+...
+Loop time of 169.562 on 1 procs for 50000 steps with 285 atoms
+
+Performance: 2.548 ns/day, 9.420 hours/ns, 294.877 timesteps/s, 84.040 katom-step/s
+99.9% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 168.32     | 168.32     | 168.32     |   0.0 | 99.26
+Neigh   | 0.016706   | 0.016706   | 0.016706   |   0.0 |  0.01
+Comm    | 0.0083726  | 0.0083726  | 0.0083726  |   0.0 |  0.00
+Output  | 0.74666    | 0.74666    | 0.74666    |   0.0 |  0.44
+Modify  | 0.41969    | 0.41969    | 0.41969    |   0.0 |  0.25
+Other   |            | 0.05555    |            |       |  0.03
+
+Nlocal:            285 ave         285 max         285 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:        37306 ave       37306 max       37306 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 37306
+Ave neighs/atom = 130.89825
+Neighbor list builds = 48
+Dangerous builds = 0
+
+
+Total wall time: 0:03:00

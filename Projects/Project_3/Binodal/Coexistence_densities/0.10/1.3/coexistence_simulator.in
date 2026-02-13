@@ -1,0 +1,99 @@
+# Defining the essential parameters now all the boundary condition are on
+
+units lj 
+dimension 3
+atom_style atomic
+boundary p p p 
+pair_style lj/cut 2.5
+
+
+
+
+# Loading up system state
+
+read_data compressed_coordinate.data
+
+
+
+
+# Defining the region around the liquid region loaded from the file
+
+region gas_region_1 block 0 15 0 15 20 35
+region gas_region_2 block 0 15 0 15 55 70
+
+
+
+
+# Filling up the newly defined empty regions with particles 
+
+create_atoms 1 random 100 87910 gas_region_1 overlap 1. maxtry 50
+create_atoms 1 random 100 87910 gas_region_2 overlap 1. maxtry 50
+
+
+
+
+# Defining the interaction parameters and the particle's properties
+
+mass 1 1 
+pair_style lj/cut 2.6
+pair_coeff 1  1  1  1  2.5
+
+
+
+
+# Assigning the initial velocities
+
+velocity all create 1.0 12345 mom yes rot no  # Assign initial velocities
+
+
+
+
+# Fixing the thermostat and the integrator
+
+fix my_thermo all langevin 0.7 0.7 0.1 54664
+fix my_integrator all nve
+
+
+
+
+# Setting up the time steps to achieve the time in lj unit with each simulation steps
+
+timestep 0.005
+
+
+
+
+# Specifying the parameters to be printed on the terminal
+
+thermo 100
+thermo_style custom step temp ke pe press
+
+
+
+
+# Exporting the simulation data for analysis
+
+dump 1 all custom 100 simulation_data_coexistence.lammpstrj id type x y z vx vy vz 
+
+
+
+
+# Running the code for equillibrium
+
+run 800000
+
+
+
+
+# Setting the data exportation for the particle distribution along the z-axis
+
+compute chunk_1 all chunk/atom bin/1d z lower 0.02 units reduced
+compute myChunk1 all property/chunk chunk_1 count
+fix 1 all ave/time 100 1 100 c_myChunk1 file bin_particles.lammpstrj mode vector
+
+
+
+
+# Running the simulation for the data production
+
+run 200000

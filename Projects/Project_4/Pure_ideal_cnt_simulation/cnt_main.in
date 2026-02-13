@@ -1,0 +1,79 @@
+units real
+atom_style molecular
+boundary f f f
+
+pair_style lj/cut 14.0
+bond_style harmonic
+angle_style harmonic
+dihedral_style opls
+improper_style harmonic
+special_bonds lj 0.0 0.0 0.5
+
+read_data input_cnt_with_topology.txt
+include cnt_utilities.txt
+
+group carbon_atoms type 1
+variable zmax equal 10
+variable zmin equal -10
+region rtop block  INF INF INF INF ${zmax} INF
+region rbot block  INF INF INF INF INF ${zmin}
+region rmid block  INF INF INF INF ${zmin} ${zmax} 
+
+
+group cnt_top region rtop
+group cnt_bot region rbot
+group cnt_mid region rmid
+set group cnt_top mol 1
+set group cnt_bot mol 2
+set group cnt_mid mol 3
+
+
+variable zmax_del equal ${zmax}-2
+variable zmin_del equal ${zmin}+2
+region rdel block INF INF INF INF ${zmin_del} ${zmax_del}
+group rdel region rdel
+delete_atoms random fraction 0.02 no rdel NULL 2793 bond yes
+
+
+reset_atoms id sort yes
+velocity cnt_mid create 300 48455 mom yes rot yes
+
+fix mynve1 cnt_top nve
+fix mynve2 cnt_bot nve
+fix mynvt cnt_mid nve
+fix thermostat cnt_mid langevin 300.0 300.0 100.0 12345
+
+
+fix mysf1 cnt_top setforce 0 0 0
+fix mysf2 cnt_bot setforce 0 0 0
+velocity cnt_top set 0 0 0
+velocity cnt_bot set 0 0 0
+
+
+variable Lcnt equal xcm(cnt_top,z)-xcm(cnt_bot,z)
+variable Fcnt equal f_mysf1[1]-f_mysf2[1]
+
+
+
+
+dump viz all image 500 myimage-*.ppm element type size 1000 400 zoom 4 shiny 0.3 fsaa yes bond atom 0.8 view 90 0 box no 0.0 axes no 0.0 0.0
+dump_modify viz pad 9 backcolor white adiam 1 0.85 bdiam 1 1.0
+
+
+run 0 post no
+
+compute Tmid cnt_mid temp
+thermo 100
+thermo_style custom step temp etotal v_Lcnt v_Fcnt
+thermo_modify temp Tmid line yaml
+
+timestep 1.0
+run 5000
+
+
+velocity cnt_top set  0 0 0.0005
+velocity cnt_bot set  0 0 -0.0005
+
+run 10000
+
+

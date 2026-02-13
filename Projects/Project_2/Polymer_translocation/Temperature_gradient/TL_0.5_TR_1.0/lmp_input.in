@@ -1,0 +1,43 @@
+units lj 
+dimension 3
+atom_style molecular
+boundary p p p 
+
+
+
+# Creating simulation box
+pair_style lj/cut 5.0
+bond_style harmonic
+
+
+#special_bonds lj 0.0 0.0 0.5
+read_data input_polymer_translocation.txt
+include translocation_utilities.txt
+
+
+group wall type 1
+group fluid type 2 3 4 
+
+velocity fluid create 1 48455 mom yes rot yes
+
+
+fix mysf1 wall setforce 0 0 0
+velocity wall set 0 0 0
+
+
+
+fix thermostat  fluid  langevin  1.0  1.0  1.0  933888 
+fix integrator all nve 
+
+
+thermo_style custom step   temp  press 
+thermo 100
+timestep 0.001
+
+
+
+run 10000
+
+
+dump 1 all custom 100 simulation_data.lammpstrj id type x y z
+run 10000

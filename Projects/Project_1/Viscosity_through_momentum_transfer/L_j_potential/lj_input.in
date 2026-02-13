@@ -1,0 +1,80 @@
+# ----------------------------------------------
+# Mullar Plathe viscosity by momentum transfer in LJ fluid
+# ----------------------------------------------
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+# -------------- USER PARAMETERS ----------------
+variable T      equal 1.0        # target temperature
+variable Tinit  equal 1.0        # equilibration temperature
+variable dt     equal 0.00001
+
+# Correlation sampling parameters
+variable p      equal 400        # correlation length (samples)
+variable s      equal 5          # sampling interval (steps)
+variable d      equal ${p}*${s}  # dump interval
+
+# In LJ units: kB = 1
+variable kB     equal 1.0
+
+# ---------------- SYSTEM SETUP -----------------
+region          box block 0 20 0 20 0 20
+create_box      1 box
+lattice         fcc 0.6
+create_atoms    1 box
+mass            1 1.0
+
+pair_style      lj/cut 3.0
+pair_coeff      1 1 1.0 1.0 3.0
+
+timestep        ${dt}
+thermo          ${d}
+
+# ------------------ EQUILIBRATION ------------------
+
+velocity        all create ${Tinit} 12345 mom yes rot yes dist gaussian
+velocity        all scale ${T}
+
+fix thermostat all langevin 1 1 0.1 34300
+fix integrator all nve
+
+thermo 100
+thermo_style custom step temp press ke pe 
+
+run             50000
+variable dt     equal 0.005
+timestep        ${dt}
+run             50000
+
+
+
+
+
+
+unfix           thermostat
+unfix 		integrator
+fix		4 all viscosity 100 x y 20
+compute chunk_1 all chunk/atom bin/1d y lower 0.05 units reduced
+fix velo all ave/chunk 20 50 1000 chunk_1 vx file velocity_profile.txt
+# do not put any mode like mode vector in this kind of fixes
+
+
+variable	dVx equal f_velo[1][3]-f_velo[11][3]
+thermo          1000
+thermo_style	custom step temp epair etotal press 
+fix integrator all nve 
+run		20000
+
+
+
+
+
+unfix		4
+fix		4 all viscosity 100 x y 20
+variable	visc equal -(f_4/(2*(step*0.005  - 120000*0.005)*20*20+1.0e-10))/(v_dVx/(10.0))
+fix		vave all ave/time 1000 1 1000 v_visc ave running start 26000
+thermo_style	custom step temp f_4 v_dVx v_visc f_vave
+run	        50000

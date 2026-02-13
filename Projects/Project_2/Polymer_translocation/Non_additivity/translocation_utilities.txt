@@ -1,0 +1,4 @@
+bond_coeff   1         100.0   1.0
+pair_coeff   * *  0.1553  1.0  3.5
+pair_modify mix arithmetic # using Lorenz-Berthelot mixing rules
+

@@ -1,0 +1,131 @@
+# Defining essential variables
+
+units lj 
+dimension 3
+atom_style molecular
+boundary p p p 
+
+
+
+# -------------- USER PARAMETERS ----------------
+variable T      equal 1.0        # target temperature
+variable Tinit  equal 1.2        # equilibration temperature
+variable dt     equal 0.0001
+
+# Correlation sampling parameters
+variable p      equal 400        # correlation length (samples)
+variable s      equal 5          # sampling interval (steps)
+variable d      equal ${p}*${s}  # dump interval
+variable kB     equal 1.0        # Boltzmann constant
+
+
+# Creating simulation box
+
+region my_box block 0 30 0 30 0 30
+
+
+create_box 1 my_box  bond/types 1  extra/bond/per/atom 12 extra/special/per/atom 12
+
+
+# Creating the narrow regions and generating the particle such that initial particle distribution remains a delta function distribution
+
+
+molecule pol polymer_template.mol 
+
+
+create_atoms 0 random 10 87910 my_box mol pol 454336 overlap 1.1 maxtry 100
+
+
+
+group polymers type 1
+
+bond_style harmonic
+bond_coeff 1 100.0 1.0
+
+
+# Setting up interaction parameters and the other variables
+
+mass 1 1
+
+
+pair_style lj/cut 2.5
+
+pair_coeff 1 1 1.0 1.0 2.5
+
+
+
+comm_modify cutoff 2.0
+
+
+
+# Creating initial velocity distribution at particular temperature
+
+velocity all create 1.0 12345 
+
+
+fix integrator all nve 
+
+fix thermostat all langevin 1.1  1.1  0.1 890890
+
+timestep 0.005 
+
+thermo 50000
+thermo_style custom step temp press
+
+
+run 500000
+
+
+print "Now production run has started."
+
+
+timestep ${dt}
+
+unfix integrator
+unfix thermostat
+
+velocity        all scale ${T}
+
+
+#  fix thermostat all langevin 1 1 0.5 34300
+
+fix integrator all nve
+#fix thermostat all langevin 1 1 0.1 34300
+
+reset_timestep  0
+
+# Stress tensor components for autocorrelation
+variable pxy equal pxy
+variable pxz equal pxz
+variable pyz equal pyz
+
+# Autocorrelation (same method as Ar script)
+fix SS all ave/correlate ${s} ${p} ${d} v_pxy v_pxz v_pyz type auto file S0S.dat ave running
+
+# Volume for Green–Kubo prefactor
+variable V equal vol
+
+# GK viscosity prefactor, LJ units:
+# η = V / (kB T)  ∫ <Pαβ(0) Pαβ(t)> dt
+variable scale equal ${V}/(${kB}*${T})*${s}*${dt}
+
+# Integrals from fix ave/correlate output (same pattern as Ar script)
+variable v11 equal trap(f_SS[3])*${scale}
+variable v22 equal trap(f_SS[4])*${scale}
+variable v33 equal trap(f_SS[5])*${scale}
+
+
+thermo 50000
+thermo_style custom step temp press v_pxy v_pxz v_pyz v_v11 v_v22 v_v33
+
+
+#dump 1 all custom 5000 simulation_data.lammpstrj id type x y z
+
+# ------------------ PRODUCTION RUN ------------------
+run 500000
+
+variable eta equal (v_v11+v_v22+v_v33)/3.0
+variable ndens equal count(all)/vol
+
+print "Average viscosity: ${eta} (LJ units) @ ${T} LJ, density ${ndens}"
+

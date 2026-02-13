@@ -1,0 +1,76 @@
+# Defining the essential variables
+
+units lj 
+dimension 3
+atom_style atomic
+boundary p p p 
+pair_style lj/cut 2.5
+
+
+
+
+# Creating the simulation box 
+
+region my_box block 0 15 0 15 0 90
+create_box 1 my_box
+
+
+
+
+# Generating the particles
+
+create_atoms 1 random 5000 87910 my_box overlap 1.5 maxtry 50
+
+
+
+
+# Defining the particles properties and the interaction parameters
+
+mass 1 1.0
+
+pair_style lj/cut 2.6
+pair_coeff 1  1  1.0 1.0 2.5
+
+
+
+
+# Assigning the initial velocity to the particles
+
+velocity all create 1.0 12345 mom yes rot no  # Assign initial velocities
+
+
+
+
+# Applying an NpT thermostat and integrator
+
+fix my_pressure all npt temp 0.4 0.4 1 z 10 10 1.0 couple none
+
+
+
+
+# Setting up time achieved in each simulation steps in lj unit 
+
+timestep 0.005
+
+
+
+
+# Specifying the parameters for printing on the terminal
+
+thermo 100
+thermo_style custom step temp ke pe press
+dump 1 all custom 100 simulation_data_compressor.lammpstrj id type x y z vx vy vz 
+
+
+
+
+# Running the simulation
+
+run 20000
+
+
+
+
+# Exporting the simulation state to be loaded by the next simulation script
+
+write_data compressed_coordinate.data

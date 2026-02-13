@@ -1,0 +1,33 @@
+
+
+# ----------------- Init Section -----------------
+
+include "system.in.init"
+
+
+# ----------------- Atom Definition Section -----------------
+
+read_data "system.data"
+
+# ----------------- Settings Section -----------------
+
+include "system.in.settings"
+
+
+velocity all create 300 34553 mom yes rot yes 
+
+fix integrator all nvt temp 300 300  10
+
+
+
+timestep 1
+
+thermo 100
+
+thermo_style custom step temp press 
+
+
+run 10000
+
+
+

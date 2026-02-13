@@ -1,0 +1,125 @@
+LAMMPS (10 Sep 2025 - Development - patch_10Sep2025-660-g792d014343)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread.
+  using 1 OpenMP thread(s) per MPI task
+
+
+# ----------------- Init Section -----------------
+
+include "system.in.init"
+units real # angstroms, kCal/mole, Daltons, Kelvin
+atom_style full # select column format for Atoms section
+pair_style lj/charmm/coul/long 9.0 10.0 10 # params needed: epsilon sigma
+bond_style harmonic # parameters needed: k_bond, r0
+angle_style harmonic # parameters needed: k_theta, theta0
+kspace_style pppm 0.0001 # long-range electrostatics sum method
+pair_modify mix arithmetic # using Lorenz-Berthelot mixing rules
+
+
+# ----------------- Atom Definition Section -----------------
+
+read_data "system.data"
+Reading data file ...
+  orthogonal box = (-100 -100 -100) to (100 100 100)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  3000 atoms
+  scanning bonds ...
+  2 = max bonds/atom
+  scanning angles ...
+  1 = max angles/atom
+  orthogonal box = (-100 -100 -100) to (100 100 100)
+  1 by 1 by 1 MPI processor grid
+  reading bonds ...
+  2000 bonds
+  reading angles ...
+  1000 angles
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        0        0       
+  special bond factors coul:  0        0        0       
+     2 = max # of 1-2 neighbors
+     1 = max # of 1-3 neighbors
+     1 = max # of 1-4 neighbors
+     2 = max # of special neighbors
+  special bonds CPU = 0.001 seconds
+  read_data CPU = 0.017 seconds
+
+# ----------------- Settings Section -----------------
+
+include "system.in.settings"
+# -- Non-bonded (Pair) interactions --
+# atomType1 atomType2 parameter-list (epsilon, sigma)
+pair_coeff 1 1 0.1553 3.166
+pair_coeff 2 2 0.0 2.058
+# (mixing rules determine interactions between types @atom:O and @atom:H)
+# -- Bonded interactions --
+# bondType parameter list (k_bond, r0)
+bond_coeff 1 1000.00 1.0
+# angleType parameter-list (k_theta, theta0)
+angle_coeff 1 1000.0 109.47
+# Group definitions and constraints can also go in the "In Settings" section
+group spce type 1 2
+3000 atoms in group spce
+fix fSHAKE spce shake 0.0001 10 100 b 1 a 1
+Finding SHAKE clusters ...
+       0 = # of size 2 clusters
+       0 = # of size 3 clusters
+       0 = # of size 4 clusters
+    1000 = # of frozen angles
+  find clusters CPU = 0.000 seconds
+# (lammps quirk: Remember to "unfix fSHAKE" during minimization.)
+
+
+velocity all create 300 34553 mom yes rot yes
+
+fix integrator all nvt temp 300 300  10
+
+
+
+timestep 1
+
+thermo 100
+
+thermo_style custom step temp press
+
+
+run 10000
+PPPM initialization ...
+  using 12-bit tables for long-range coulomb
+  G vector (1/distance) = 0.19705771
+  grid = 50 50 50
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.042529748
+  estimated relative force accuracy = 0.00012807707
+  using double precision FFTW3
+  3d grid and FFT values/proc = 166375 125000
+Generated 1 of 1 mixed pair_coeff terms from arithmetic mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 12
+  ghost atom cutoff = 12
+  binsize = 6, bins = 34 34 34
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/charmm/coul/long, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d
+      bin: standard
+SHAKE stats (type/ave/delta/count) on step 0
+Bond:   1   1         2.44249e-15     2000
+Angle:  1   109.47    2.13163e-13     1000
+Per MPI rank memory allocation (min/avg/max) = 27.35 | 27.35 | 27.35 Mbytes
+   Step          Temp          Press     
+         0   300            119.71748    
+SHAKE stats (type/ave/delta/count) on step 100
+Bond:   1   0.999994  6.48492e-05     2000
+Angle:  1   109.47    0.00608086      1000
+       100   310.65633     -25.169017    
+SHAKE stats (type/ave/delta/count) on step 200
+Bond:   1   1         2.38507e-06     2000
+Angle:  1   109.47    0.000207755     1000
+       200   298.62859     -0.61550443   
+SHAKE stats (type/ave/delta/count) on step 300
+Bond:   1   1         1.11658e-06     2000
+Angle:  1   109.47    0.000112835     1000
+       300   301.8991
